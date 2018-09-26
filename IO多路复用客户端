@@ -1,0 +1,10 @@
+import socket
+c = socket.socket()
+c.connect(('192.168.1.5',80))         # 与服务器端建立连接
+while True:
+    msg = input('>>>')
+    if not msg:
+        continue
+    c.send(msg.encode('utf8'))
+    data = c.recv(1024)
+    print(data.decode('utf8'))
