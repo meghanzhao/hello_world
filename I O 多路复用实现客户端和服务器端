@@ -1,0 +1,43 @@
+import socket
+import selectors
+
+# selector对象的select方法，作用，用于返回满足我们监视的event的文件对象
+# 返回值是一个（key,event) 的二元组，其中key是一个SelectorKey的实例，而event就是event_read,或者event_write
+
+
+# 服务器端
+sel = selectors.DefaultSelector()                  # 缺省的selector是最高效率的selector实例对象。
+
+def accept(s:socket,mask):
+    conn,raddr = s.accept()
+    conn.setblocking(False)
+    print(conn,'\n',raddr,'\n',mask)
+    sel.register(conn,selectors.EVENT_READ,read)
+
+def read(conn:socket,mask):
+    try:
+        data = conn.recv(1024)
+        if not data:
+            print('closing',conn)
+            sel.unregister(conn)
+        words = input('>>>')
+        conn.send(words.encode('utf8'))
+        print(data.decode('utf8'))
+    except Exception:
+        print('closing',conn)
+        sel.unregister(conn)
+        conn.close()
+
+s = socket.socket()
+s.bind(('192.168.1.5',80))   # 注意只能绑定一次
+s.listen()
+s.setblocking(False)
+sel.register(s,selectors.EVENT_READ,accept)
+
+while True:
+    events = sel.select()    # 检测所有监控的对象是否有完成 wait data
+    # Selector.Key = namedtuple('SelectorKey',['fileobj','fd','event','data'])   用到元编程，返回一个类对象SelectorKey,然后有中括号中的属性。
+    for key,mask in events:    # selector.select() 返回一个二元组(key实例对象，mask)码。  
+        print(events,'~~~~~~~~~~~~')
+        callable = key.data
+        callable(key.fileobj,mask)
